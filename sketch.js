@@ -8,7 +8,7 @@ var rectangle_heights = [0.29829, 0.2276, 0.16713];
 var rectangle_y_offsets = [0.08992, 0.44713, 0.7445];
 var outer_margin_left = 0.15625;
 
-var running = false;
+var running = true;
 
 var rect_position;
 
