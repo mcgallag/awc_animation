@@ -17,6 +17,10 @@ var start_x_coordinates;
 var images = [];
 var imageRectArray = [];
 
+var finalImageRect;
+var finalRectX = 0.48385;
+var finalRectY = 0.75542;
+
 var awcFont;
 
 class Rectangle {
@@ -24,31 +28,38 @@ class Rectangle {
     this.position = createVector(x, y);
     this.width = width;
     this.height = height;
-    }
+  }
 
   draw() {
     stroke(255);
+    strokeWeight(10);
     noFill();
     rect(this.position.x, this.position.y, this.width, this.height);
   }
 }
 
 class SeekingRectangle extends Rectangle {
-  constructor(x, y, width, height, targetX, targetY) {
+  constructor(x, y, width, height, targetX, targetY, callback=null) {
     super(x, y, width, height);
     this.target = createVector(targetX, targetY);
     this.velocity = createVector();
     this.acceleration = createVector();
-    this.maxspeed = 20.0;
+    this.maxspeed = 11.5;
     this.maxforce = 1.35;
+    this.callback = callback;
+    this.enabled = true;
   }
 
   applyForce(force) {
     this.acceleration.add(force);
   }
 
+  toggle() {
+    this.enabled = !this.enabled;
+  }
+
   update() {
-    if (running == false) {
+    if (this.enabled == false) {
       return;
     }
     let desired = p5.Vector.sub(this.target, this.position);
@@ -59,6 +70,10 @@ class SeekingRectangle extends Rectangle {
       desired.mult(speed);
     } else {
       desired.mult(this.maxspeed);
+    }
+    if (this.callback != null && distance < 10) {
+      this.callback();
+      this.callback = null;
     }
 
     let steering_force = p5.Vector.sub(desired, this.velocity);
@@ -77,18 +92,39 @@ class ImageRectangle extends SeekingRectangle {
     super(x, y, width, height, targetX, targetY);
     this.image = image;
     this.image.resize(this.width, this.height);
+    this.rotation = null;
   }
 
   draw() {
-    image(this.image, this.position.x, this.position.y);
+    if (this.enabled == false) {
+      return;
+    }
+    if (this.rotation == null) {
+      image(this.image, this.position.x, this.position.y);
+    } else {
+      push();
+        translate(this.position.x, this.position.y);
+        rotate(this.rotation);
+        image(this.image, 0, 0);
+      pop();
+    }
   }
 }
 
 function preload() {
-  // awcFont = loadFont("stop.ttf");
-  images.push(loadImage("words/all.png"));
-  images.push(loadImage("words/wings.png"));
-  images.push(loadImage("words/considered.png"));
+  images.push(loadImage("assets/all.png"));
+  images.push(loadImage("assets/wings.png"));
+  images.push(loadImage("assets/considered.png"));
+  images.push(loadImage("assets/uncensored.png"));
+  music = loadSound("assets/awc.mp3");
+}
+
+function playTheme() {
+  music.play();
+}
+
+function enableFinalImage() {
+  finalImageRect.toggle();
 }
 
 function setup() {
@@ -121,21 +157,45 @@ function setup() {
       outer_margin_left + hor_margin,
       rectangle_y_offsets[i]));
   }
+
+  for (image_rect of imageRectArray) {
+    image_rect.toggle();
+  }
+
+  finalRectX *= windowWidth;
+  finalRectY *= windowHeight;
+
+  finalImageRect = new ImageRectangle(images[images.length - 1],
+    -100, -100, images[images.length - 1].width,
+    images[images.length - 1].height, finalRectX, finalRectY);
+  finalImageRect.rotation = -PI / 10;
+  finalImageRect.maxspeed = 45;
+  finalImageRect.maxforce = 10.0;
+  finalImageRect.toggle();
+  imageRectArray[2].callback = enableFinalImage;
 }
-  
 
 function draw() {
-  clear();
+  // clear();
   background("#005087");
 
-  // outer_rectangle.draw();
+  outer_rectangle.draw();
 
   for (image_rect of imageRectArray) {
     image_rect.update();
     image_rect.draw();
   }
+  finalImageRect.update();
+  finalImageRect.draw();
 }
 
 function mouseClicked() {
-  running = true;
+  playTheme();
+  for (image_rect of imageRectArray) {
+    image_rect.toggle();
+  }
+  // finalImageRect.position.x = mouseX;
+  // finalImageRect.position.y = mouseY;
+  // console.log(finalImageRect.position);
+  // running = true;
 }
