@@ -8,7 +8,7 @@ var rectangle_heights = [0.29829, 0.2276, 0.16713];
 var rectangle_y_offsets = [0.08992, 0.44713, 0.7445];
 var outer_margin_left = 0.15625;
 
-var running = true;
+var running = false;
 
 var rect_position;
 
@@ -39,8 +39,8 @@ class SeekingRectangle extends Rectangle {
     this.target = createVector(targetX, targetY);
     this.velocity = createVector();
     this.acceleration = createVector();
-    this.maxspeed = 10.0;
-    this.maxforce = 1.5;
+    this.maxspeed = 20.0;
+    this.maxforce = 1.35;
   }
 
   applyForce(force) {
@@ -52,8 +52,14 @@ class SeekingRectangle extends Rectangle {
       return;
     }
     let desired = p5.Vector.sub(this.target, this.position);
+    let distance = desired.mag();
     desired.normalize();
-    desired.mult(this.maxspeed);
+    if (distance < 100) {
+      let speed = map(distance, 0, 100, 0, this.maxspeed);
+      desired.mult(speed);
+    } else {
+      desired.mult(this.maxspeed);
+    }
 
     let steering_force = p5.Vector.sub(desired, this.velocity);
     steering_force.limit(this.maxforce);
@@ -98,7 +104,7 @@ function setup() {
 
   outer_margin_left *= windowWidth;
 
-  start_x_coordinates = [windowWidth, -outer_width, windowWidth];
+  start_x_coordinates = [windowWidth, -outer_width*2, windowWidth*1.5];
 
   outer_rectangle = new Rectangle(outer_margin_left,
     (windowHeight - outer_height) / 2, outer_width, outer_height);
@@ -122,7 +128,7 @@ function draw() {
   clear();
   background("#005087");
 
-  outer_rectangle.draw();
+  // outer_rectangle.draw();
 
   for (image_rect of imageRectArray) {
     image_rect.update();
